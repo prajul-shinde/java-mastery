@@ -830,7 +830,7 @@ function renderSidebar() {
 }
 
 // ── LOAD WEEK ────────────────────────────────────────────────────────────────
-async function loadWeek(weekId) {
+function loadWeek(weekId) {
   const week = WEEKS.find(w => w.id === weekId);
   if (!week) return;
 
@@ -849,23 +849,23 @@ async function loadWeek(weekId) {
   document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
   document.querySelector('[data-mode="lesson"]').classList.add('active');
 
-  // Fetch and parse markdown
-  try {
-    const resp = await fetch(`content/${week.file}`);
-    const md = await resp.text();
-    week._rawMd = md;
+  // Load from embedded MD_CONTENT
+  const md = (typeof MD_CONTENT !== 'undefined' && MD_CONTENT[weekId]) ? MD_CONTENT[weekId] : null;
 
-    // Count H2 sections for progress
-    const h2count = (md.match(/^## /gm) || []).length;
-    week._sectionCount = h2count;
-
-    renderLesson(week);
-    buildSearchIndex(week, md);
-    updateWeekProgressUI(weekId);
-  } catch(e) {
-    document.getElementById('lesson-content').innerHTML = `<p style="color:var(--red)">Could not load ${week.file}. Make sure the file is in the content/ folder.</p>`;
+  if (!md) {
+    document.getElementById('lesson-content').innerHTML = `<p style="color:var(--red)">Content not found for "${weekId}". Check that MD_CONTENT["${weekId}"] is defined in content.js.</p>`;
     document.getElementById('lesson-content').style.display = 'block';
+    document.getElementById('welcome-screen').style.display = 'none';
+    return;
   }
+
+  week._rawMd = md;
+  const h2count = (md.match(/^## /gm) || []).length;
+  week._sectionCount = h2count;
+
+  renderLesson(week);
+  buildSearchIndex(week, md);
+  updateWeekProgressUI(weekId);
 }
 
 // ── LESSON RENDER ────────────────────────────────────────────────────────────────
@@ -1335,10 +1335,10 @@ searchInput.addEventListener('input', debounce(() => {
 searchInput.addEventListener('blur', () => setTimeout(() => searchResults.style.display = 'none', 200));
 searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') { searchResults.style.display = 'none'; searchInput.blur(); }});
 
-async function jumpToResult(weekId, title) {
+function jumpToResult(weekId, title) {
   searchResults.style.display = 'none';
   searchInput.value = '';
-  await loadWeek(weekId);
+  loadWeek(weekId);
   // Small delay for render
   setTimeout(() => {
     const headings = document.querySelectorAll('#lesson-content h2, #lesson-content h3');
