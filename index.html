@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Mastery — Interactive Learning Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<style>
+:root {
+  --bg: #0d0f14;
+  --bg2: #13161e;
+  --bg3: #1a1e2a;
+  --bg4: #222637;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --text2: #9aa0b4;
+  --text3: #5c6278;
+  --accent: #f97316;
+  --accent2: #fb923c;
+  --accent-dim: rgba(249,115,22,0.12);
+  --accent-dim2: rgba(249,115,22,0.2);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96,165,250,0.1);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.1);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.1);
+  --yellow: #fbbf24;
+  --yellow-dim: rgba(251,191,36,0.1);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.1);
+  --sidebar-w: 280px;
+  --font-body: 'Sora', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── LAYOUT ─────────────────────────────────── */
+#app { display: flex; height: 100vh; }
+
+/* ── SIDEBAR ─────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#sidebar-header {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  letter-spacing: -1px;
+  flex-shrink: 0;
+}
+
+.logo-text { font-size: 14px; font-weight: 600; letter-spacing: -0.3px; }
+.logo-text span { color: var(--accent); }
+
+#search-box {
+  position: relative;
+}
+
+#search-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 32px 8px 10px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#search-input:focus { border-color: var(--accent); }
+#search-input::placeholder { color: var(--text3); }
+
+.search-icon {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--text3); font-size: 12px; pointer-events: none;
+}
+
+#search-results {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  max-height: 320px; overflow-y: auto;
+  z-index: 100; display: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.search-result-item {
+  padding: 10px 14px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--bg4); }
+.sri-week { font-size: 10px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.sri-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+.sri-snippet { font-size: 11px; color: var(--text3); line-height: 1.4; }
+.sri-snippet mark { background: var(--accent-dim); color: var(--accent2); border-radius: 2px; }
+
+/* ── OVERALL PROGRESS ─────────────────────────────────── */
+#overall-progress {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.op-label {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--text3); margin-bottom: 6px;
+}
+
+.op-label span:last-child { color: var(--accent); font-weight: 600; }
+
+.progress-bar-track {
+  height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ── WEEK LIST ─────────────────────────────────── */
+#week-list {
+  flex: 1; overflow-y: auto; padding: 8px 0;
+}
+
+#week-list::-webkit-scrollbar { width: 4px; }
+#week-list::-webkit-scrollbar-track { background: transparent; }
+#week-list::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.week-item {
+  padding: 0; cursor: pointer;
+}
+
+.week-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.week-header:hover { background: var(--bg3); }
+
+.week-item.active .week-header {
+  background: var(--accent-dim);
+}
+
+.week-item.active .week-header::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--accent); border-radius: 0 2px 2px 0;
+}
+
+.week-num {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: var(--bg4);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  color: var(--text2); flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.week-item.active .week-num { background: var(--accent); color: #fff; }
+
+.week-meta { flex: 1; min-width: 0; }
+.week-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.week-progress-text { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+.week-mini-bar {
+  margin: 0 16px 8px;
+  display: none;
+}
+
+.week-item.active .week-mini-bar { display: block; }
+.week-item.active .week-progress-text { color: var(--accent); }
+
+/* Special items */
+.week-item.special .week-num { background: var(--purple-dim); color: var(--purple); }
+.week-item.special.active .week-num { background: var(--purple); color: #fff; }
+.week-item.special.active .week-header { background: var(--purple-dim); }
+.week-item.special.active .week-header::before { background: var(--purple); }
+.week-item.special.active .week-progress-text { color: var(--purple); }
+
+/* ── MAIN PANEL ─────────────────────────────────── */
+#main {
+  flex: 1; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* ── TOP BAR ─────────────────────────────────── */
+#topbar {
+  display: flex; align-items: center;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+#topbar-title {
+  flex: 1;
+  font-size: 14px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.mode-tabs {
+  display: flex; gap: 4px;
+  background: var(--bg3); padding: 3px; border-radius: var(--radius);
+}
+
+.mode-tab {
+  padding: 5px 12px; border-radius: 5px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+  color: var(--text2); white-space: nowrap;
+}
+
+.mode-tab:hover { color: var(--text); }
+.mode-tab.active { background: var(--accent); color: #fff; }
+.mode-tab.disabled { opacity: 0.3; cursor: not-allowed; }
+.mode-tab.purple-tab.active { background: var(--purple); }
+.mode-tab.green-tab.active { background: var(--green); color: #0d1117; }
+
+/* ── CONTENT AREA ─────────────────────────────────── */
+#content-area {
+  flex: 1; overflow-y: auto;
+  padding: 32px 40px;
+}
+
+#content-area::-webkit-scrollbar { width: 6px; }
+#content-area::-webkit-scrollbar-track { background: transparent; }
+#content-area::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+/* ── LOADING / EMPTY STATES ─────────────────────────────────── */
+#welcome-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; text-align: center; padding: 40px;
+}
+
+.welcome-title { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; }
+.welcome-title span { color: var(--accent); }
+.welcome-sub { font-size: 15px; color: var(--text2); max-width: 420px; line-height: 1.6; }
+
+.welcome-hint {
+  margin-top: 32px;
+  padding: 16px 24px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 13px; color: var(--text2);
+  display: flex; align-items: center; gap: 10px;
+}
+
+/* ── LESSON CONTENT ─────────────────────────────────── */
+#lesson-content { max-width: 780px; }
+
+.lesson-content h1 {
+  font-size: 26px; font-weight: 700; letter-spacing: -0.5px;
+  margin-bottom: 24px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.3;
+}
+
+.lesson-content h2 {
+  font-size: 18px; font-weight: 600; margin-top: 40px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.section-check {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 1.5px solid var(--border2);
+  background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.2s; flex-shrink: 0;
+}
+
+.section-check:hover { border-color: var(--accent); }
+.section-check.checked { background: var(--accent); border-color: var(--accent); }
+.section-check.checked::after {
+  content: '✓'; color: #fff; font-size: 10px; font-weight: 700; line-height: 1;
+}
+
+h2.completed { text-decoration: line-through; color: var(--text3); }
+
+.lesson-content h3 {
+  font-size: 14px; font-weight: 600; margin-top: 24px; margin-bottom: 12px;
+  color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+.lesson-content p { margin-bottom: 14px; color: var(--text); line-height: 1.75; }
+
+.lesson-content ul, .lesson-content ol {
+  margin: 0 0 16px 20px;
+}
+
+.lesson-content li { margin-bottom: 6px; line-height: 1.7; }
+
+.lesson-content strong { color: var(--accent2); font-weight: 600; }
+
+.lesson-content em { color: var(--text2); font-style: italic; }
+
+.lesson-content a { color: var(--blue); text-decoration: none; }
+.lesson-content a:hover { text-decoration: underline; }
+
+.lesson-content blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  padding: 12px 16px; margin: 16px 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic; color: var(--text2);
+}
+
+.lesson-content hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+.lesson-content table {
+  width: 100%; border-collapse: collapse; margin: 16px 0;
+  font-size: 13px;
+}
+
+.lesson-content th {
+  background: var(--bg3); padding: 10px 14px;
+  text-align: left; font-weight: 600; font-size: 12px;
+  color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border2);
+}
+
+.lesson-content td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.lesson-content tr:last-child td { border-bottom: none; }
+
+/* Code blocks */
+.code-wrapper {
+  position: relative; margin: 16px 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px;
+  background: #1a1e2e;
+  border-bottom: 1px solid var(--border);
+}
+
+.code-lang {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.copy-btn {
+  background: transparent; border: 1px solid var(--border2);
+  border-radius: 4px; padding: 3px 10px;
+  color: var(--text3); font-size: 11px; cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+.code-wrapper pre {
+  margin: 0 !important; border-radius: 0 !important;
+  border: none !important;
+  background: #161b2e !important;
+  padding: 16px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 13px !important;
+  overflow-x: auto;
+  max-height: 480px;
+}
+
+.lesson-content code:not([class]) {
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--bg4); color: var(--accent2);
+  padding: 2px 6px; border-radius: 4px;
+}
+
+/* ── EXERCISES MODE ─────────────────────────────────── */
+#exercises-content { max-width: 780px; }
+
+.exercises-header {
+  margin-bottom: 28px;
+}
+
+.exercises-header h1 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 6px;
+}
+
+.exercises-header p { color: var(--text2); font-size: 14px; }
+
+.exercise-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.exercise-card:hover { border-color: var(--border2); }
+
+.exercise-card.solved { border-color: var(--green); }
+.exercise-card.solved .ex-num { background: var(--green-dim); color: var(--green); }
+
+.ex-header {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 20px; cursor: pointer;
+}
+
+.ex-num {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--accent-dim); color: var(--accent);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+
+.ex-title { font-size: 14px; font-weight: 500; flex: 1; line-height: 1.5; }
+
+.ex-toggle {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--text3); font-size: 12px; white-space: nowrap;
+  padding-top: 2px;
+}
+
+.ex-toggle svg { transition: transform 0.2s; }
+.exercise-card.open .ex-toggle svg { transform: rotate(180deg); }
+
+.ex-body {
+  display: none;
+  padding: 0 20px 20px;
+}
+
+.exercise-card.open .ex-body { display: block; }
+
+.ex-body-inner { border-top: 1px solid var(--border); padding-top: 16px; }
+
+.reveal-btn {
+  margin-top: 14px;
+  padding: 8px 18px;
+  background: var(--accent-dim); border: 1px solid var(--accent);
+  color: var(--accent); border-radius: var(--radius);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+
+.reveal-btn:hover { background: var(--accent); color: #fff; }
+
+.answer-section { display: none; margin-top: 16px; }
+.answer-section.shown { display: block; }
+
+.answer-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--green); margin-bottom: 8px;
+}
+
+.mark-solved-btn {
+  margin-top: 12px;
+  padding: 6px 14px;
+  background: var(--green-dim); border: 1px solid var(--green);
+  color: var(--green); border-radius: var(--radius);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+
+.mark-solved-btn:hover { background: var(--green); color: #0d1117; }
+.mark-solved-btn.done { opacity: 0.5; cursor: default; }
+
+/* ── FLASHCARD MODE ─────────────────────────────────── */
+#flashcard-content { max-width: 780px; }
+
+.fc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.fc-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+
+.fc-controls {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.fc-counter {
+  font-family: var(--font-mono); font-size: 13px; color: var(--text2);
+}
+
+.fc-nav-btn {
+  width: 32px; height: 32px; border-radius: var(--radius);
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+
+.fc-nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.fc-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.fc-shuffle-btn {
+  padding: 0 12px; height: 32px;
+  border-radius: var(--radius);
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 500;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+
+.fc-shuffle-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+.flashcard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  min-height: 240px;
+  padding: 32px;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s;
+  user-select: none;
+}
+
+.flashcard:hover { border-color: var(--border2); }
+.flashcard.flipped { border-color: var(--purple); }
+
+.fc-badge {
+  position: absolute; top: 16px; right: 16px;
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 3px 10px; border-radius: 20px;
+}
+
+.fc-badge.q { background: var(--purple-dim); color: var(--purple); }
+.fc-badge.a { background: var(--green-dim); color: var(--green); }
+
+.fc-question { font-size: 17px; font-weight: 500; line-height: 1.6; }
+.fc-answer { display: none; }
+.flashcard.flipped .fc-question { display: none; }
+.flashcard.flipped .fc-answer { display: block; }
+.flashcard.flipped .fc-badge.q { display: none; }
+.flashcard.flipped .fc-badge.a { display: block !important; }
+
+.fc-hint {
+  text-align: center; font-size: 12px; color: var(--text3); margin-top: 12px;
+}
+
+.fc-score {
+  display: flex; gap: 10px; margin-top: 20px;
+}
+
+.fc-score-btn {
+  flex: 1; padding: 10px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: var(--font-body);
+  border: 1px solid;
+  transition: all 0.2s;
+}
+
+.fc-score-btn.wrong {
+  background: var(--red-dim); border-color: var(--red); color: var(--red);
+}
+
+.fc-score-btn.wrong:hover { background: var(--red); color: #fff; }
+
+.fc-score-btn.right {
+  background: var(--green-dim); border-color: var(--green); color: var(--green);
+}
+
+.fc-score-btn.right:hover { background: var(--green); color: #0d1117; }
+
+.fc-score { display: none; }
+.flashcard.flipped ~ .fc-score { display: flex; }
+
+.fc-stats {
+  display: flex; gap: 12px; margin-top: 24px;
+}
+
+.fc-stat {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px;
+  text-align: center;
+}
+
+.fc-stat-num { font-family: var(--font-mono); font-size: 22px; font-weight: 700; }
+.fc-stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.stat-correct .fc-stat-num { color: var(--green); }
+.stat-wrong .fc-stat-num { color: var(--red); }
+.stat-remaining .fc-stat-num { color: var(--text2); }
+
+.fc-all-done {
+  text-align: center; padding: 60px 40px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+}
+
+.fc-all-done h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.fc-all-done p { color: var(--text2); font-size: 14px; }
+
+.fc-restart-btn {
+  margin-top: 20px; padding: 10px 24px;
+  background: var(--purple-dim); border: 1px solid var(--purple);
+  color: var(--purple); border-radius: var(--radius);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: var(--font-body); transition: all 0.2s;
+}
+
+.fc-restart-btn:hover { background: var(--purple); color: #fff; }
+
+.no-content-msg {
+  text-align: center; padding: 60px 40px;
+  color: var(--text2); font-size: 15px;
+}
+
+/* ── WEEK PROGRESS RING ─────────────────────────────────── */
+.week-progress-bar {
+  height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden;
+}
+
+.week-progress-bar-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.week-item.special .week-progress-bar-fill { background: var(--purple); }
+
+/* ── CAPSTONE / REVISION SPECIAL STYLES ─────────────────────────────────── */
+.capstone-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.badge-difficulty-1 { background: var(--green-dim); color: var(--green); }
+.badge-difficulty-2 { background: var(--yellow-dim); color: var(--yellow); }
+.badge-difficulty-3 { background: var(--red-dim); color: var(--red); }
+
+/* ── RESPONSIVE ─────────────────────────────────── */
+@media (max-width: 768px) {
+  #sidebar { width: 240px; }
+  #content-area { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">J</div>
+        <div class="logo-text">Java <span>Mastery</span></div>
+      </div>
+      <div id="search-box">
+        <input type="text" id="search-input" placeholder="Search all content..." autocomplete="off">
+        <span class="search-icon">⌕</span>
+        <div id="search-results"></div>
+      </div>
+    </div>
+
+    <div id="overall-progress">
+      <div class="op-label">
+        <span>Overall progress</span>
+        <span id="overall-pct">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="overall-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div id="week-list"></div>
+  </aside>
+
+  <!-- MAIN PANEL -->
+  <main id="main">
+    <div id="topbar">
+      <div id="topbar-title">Select a week to begin</div>
+      <div class="mode-tabs" id="mode-tabs" style="display:none">
+        <div class="mode-tab active" data-mode="lesson">Lesson</div>
+        <div class="mode-tab" data-mode="exercises">Exercises</div>
+        <div class="mode-tab purple-tab" data-mode="flashcards">Flashcards</div>
+      </div>
+    </div>
+
+    <div id="content-area">
+      <div id="welcome-screen">
+        <div class="welcome-title">Welcome to<br><span>Java Mastery</span></div>
+        <div class="welcome-sub">Your complete 8-week interactive Java learning platform. Lessons, exercises, flashcards, and progress tracking — all in one place.</div>
+        <div class="welcome-hint">
+          <span>←</span>
+          <span>Pick a week from the sidebar to get started</span>
+        </div>
+      </div>
+      <div id="lesson-content" class="lesson-content" style="display:none"></div>
+      <div id="exercises-content" style="display:none"></div>
+      <div id="flashcard-content" style="display:none"></div>
+    </div>
+  </main>
+
+</div>
+
+<script src="content.js"></script>
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────
+const state = {
+  activeWeek: null,
+  mode: 'lesson',
+  searchIndex: [],
+  fcIndex: 0,
+  fcCards: [],
+  fcShuffled: false,
+  fcCorrect: 0,
+  fcWrong: 0,
+  fcDone: new Set(),
+};
+
+// ── STORAGE ────────────────────────────────────────────────────────────────
+const Storage = {
+  key: (weekId, type) => `jm_${weekId}_${type}`,
+  getChecked: (weekId) => JSON.parse(localStorage.getItem(Storage.key(weekId, 'checked')) || '[]'),
+  setChecked: (weekId, arr) => localStorage.setItem(Storage.key(weekId, 'checked'), JSON.stringify(arr)),
+  getSolved: (weekId) => JSON.parse(localStorage.getItem(Storage.key(weekId, 'solved')) || '[]'),
+  setSolved: (weekId, arr) => localStorage.setItem(Storage.key(weekId, 'solved'), JSON.stringify(arr)),
+};
+
+// ── PROGRESS ────────────────────────────────────────────────────────────────
+function getWeekProgress(week) {
+  const checked = Storage.getChecked(week.id);
+  const total = week._sectionCount || 0;
+  if (total === 0) return 0;
+  return Math.round((checked.length / total) * 100);
+}
+
+function updateOverallProgress() {
+  const regularWeeks = WEEKS.filter(w => !w.special);
+  if (regularWeeks.length === 0) return;
+  const avg = regularWeeks.reduce((sum, w) => sum + getWeekProgress(w), 0) / regularWeeks.length;
+  const pct = Math.round(avg);
+  document.getElementById('overall-pct').textContent = pct + '%';
+  document.getElementById('overall-bar').style.width = pct + '%';
+}
+
+function updateWeekProgressUI(weekId) {
+  const week = WEEKS.find(w => w.id === weekId);
+  if (!week) return;
+  const pct = getWeekProgress(week);
+  const barEl = document.querySelector(`.week-item[data-id="${weekId}"] .week-progress-bar-fill`);
+  const textEl = document.querySelector(`.week-item[data-id="${weekId}"] .week-progress-text`);
+  if (barEl) barEl.style.width = pct + '%';
+  if (textEl) textEl.textContent = pct === 0 ? 'Not started' : pct === 100 ? 'Complete' : `${pct}% complete`;
+  updateOverallProgress();
+}
+
+// ── SIDEBAR RENDER ────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById('week-list');
+  list.innerHTML = WEEKS.map(week => `
+    <div class="week-item${week.special ? ' special' : ''}" data-id="${week.id}">
+      <div class="week-header" onclick="loadWeek('${week.id}')">
+        <div class="week-num">${week.special ? (week.id === 'revision' ? 'R' : 'C') : week.num}</div>
+        <div class="week-meta">
+          <div class="week-title">${week.title}</div>
+          <div class="week-progress-text">Not started</div>
+        </div>
+      </div>
+      <div class="week-mini-bar">
+        <div class="week-progress-bar">
+          <div class="week-progress-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  WEEKS.forEach(w => updateWeekProgressUI(w.id));
+}
+
+// ── LOAD WEEK ────────────────────────────────────────────────────────────────
+async function loadWeek(weekId) {
+  const week = WEEKS.find(w => w.id === weekId);
+  if (!week) return;
+
+  // Update active state in sidebar
+  document.querySelectorAll('.week-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.week-item[data-id="${weekId}"]`)?.classList.add('active');
+
+  document.getElementById('topbar-title').textContent = week.title;
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('mode-tabs').style.display = 'flex';
+
+  state.activeWeek = week;
+  state.mode = 'lesson';
+
+  // Reset tabs
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-mode="lesson"]').classList.add('active');
+
+  // Fetch and parse markdown
+  try {
+    const resp = await fetch(`content/${week.file}`);
+    const md = await resp.text();
+    week._rawMd = md;
+
+    // Count H2 sections for progress
+    const h2count = (md.match(/^## /gm) || []).length;
+    week._sectionCount = h2count;
+
+    renderLesson(week);
+    buildSearchIndex(week, md);
+    updateWeekProgressUI(weekId);
+  } catch(e) {
+    document.getElementById('lesson-content').innerHTML = `<p style="color:var(--red)">Could not load ${week.file}. Make sure the file is in the content/ folder.</p>`;
+    document.getElementById('lesson-content').style.display = 'block';
+  }
+}
+
+// ── LESSON RENDER ────────────────────────────────────────────────────────────────
+function renderLesson(week) {
+  const el = document.getElementById('lesson-content');
+  el.style.display = 'block';
+  document.getElementById('exercises-content').style.display = 'none';
+  document.getElementById('flashcard-content').style.display = 'none';
+
+  const md = week._rawMd;
+  const checked = Storage.getChecked(week.id);
+
+  // Convert markdown
+  const html = marked.parse(md, { gfm: true, breaks: false });
+  el.innerHTML = html;
+  el.className = 'lesson-content';
+
+  // Wrap code blocks
+  el.querySelectorAll('pre').forEach(pre => {
+    const code = pre.querySelector('code');
+    const lang = (code?.className || '').replace('language-', '') || 'code';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-wrapper';
+    const header = document.createElement('div');
+    header.className = 'code-header';
+    header.innerHTML = `<span class="code-lang">${lang}</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>`;
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(header);
+    wrapper.appendChild(pre);
+  });
+
+  // Add checkboxes to H2 headings
+  let sectionIdx = 0;
+  el.querySelectorAll('h2').forEach(h2 => {
+    const sectionId = `s_${week.id}_${sectionIdx++}`;
+    const isDone = checked.includes(sectionId);
+    const check = document.createElement('div');
+    check.className = 'section-check' + (isDone ? ' checked' : '');
+    check.dataset.sid = sectionId;
+    check.dataset.weekId = week.id;
+    check.title = 'Mark section complete';
+    check.onclick = (e) => { e.stopPropagation(); toggleSection(check, week); };
+    h2.insertBefore(check, h2.firstChild);
+    if (isDone) h2.classList.add('completed');
+  });
+
+  // Prism highlight
+  Prism.highlightAllUnder(el);
+}
+
+function toggleSection(checkEl, week) {
+  const sid = checkEl.dataset.sid;
+  let checked = Storage.getChecked(week.id);
+  const h2 = checkEl.parentElement;
+
+  if (checked.includes(sid)) {
+    checked = checked.filter(s => s !== sid);
+    checkEl.classList.remove('checked');
+    h2.classList.remove('completed');
+  } else {
+    checked.push(sid);
+    checkEl.classList.add('checked');
+    h2.classList.add('completed');
+  }
+
+  Storage.setChecked(week.id, checked);
+  updateWeekProgressUI(week.id);
+}
+
+function copyCode(btn) {
+  const code = btn.closest('.code-wrapper').querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── EXERCISES RENDER ────────────────────────────────────────────────────────────────
+function renderExercises(week) {
+  const el = document.getElementById('exercises-content');
+  el.style.display = 'block';
+  document.getElementById('lesson-content').style.display = 'none';
+  document.getElementById('flashcard-content').style.display = 'none';
+
+  const md = week._rawMd;
+
+  // Find exercises section
+  const exerciseMatch = md.match(/##\s+(?:Practice\s+)?Exercises?([\s\S]*?)(?=\n## |\n# |$)/i);
+
+  if (!exerciseMatch) {
+    el.innerHTML = `<div class="no-content-msg">No exercises found in this week's content.</div>`;
+    return;
+  }
+
+  const exSection = exerciseMatch[1];
+  const solved = Storage.getSolved(week.id);
+
+  // Split into individual exercises by numbered items or ### headings
+  const blocks = splitExercises(exSection);
+
+  if (blocks.length === 0) {
+    el.innerHTML = `<div class="no-content-msg">No exercises found in this week's content.</div>`;
+    return;
+  }
+
+  let html = `<div class="exercises-header">
+    <h1>Practice Exercises</h1>
+    <p>${blocks.length} exercise${blocks.length !== 1 ? 's' : ''} — expand each to see the prompt, then reveal the answer</p>
+  </div>`;
+
+  blocks.forEach((block, i) => {
+    const exId = `ex_${week.id}_${i}`;
+    const isSolved = solved.includes(exId);
+    const titleText = block.title || `Exercise ${i + 1}`;
+    const questionHtml = marked.parse(block.question || '');
+    const answerHtml = block.answer ? marked.parse(block.answer) : '';
+
+    html += `
+    <div class="exercise-card${isSolved ? ' solved' : ''}" data-exid="${exId}">
+      <div class="ex-header" onclick="toggleExercise(this)">
+        <div class="ex-num">${i + 1}</div>
+        <div class="ex-title">${escapeHtml(titleText)}</div>
+        <div class="ex-toggle">
+          ${isSolved ? '<span style="color:var(--green);font-size:11px;font-weight:600">SOLVED</span>' : '<span>Show</span>'}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="ex-body">
+        <div class="ex-body-inner">
+          <div class="lesson-content">${questionHtml}</div>
+          ${answerHtml ? `
+            <button class="reveal-btn" onclick="revealAnswer(this)">Show Answer</button>
+            <div class="answer-section">
+              <div class="answer-label">Answer</div>
+              <div class="lesson-content">${answerHtml}</div>
+              <button class="mark-solved-btn${isSolved ? ' done' : ''}" onclick="markSolved(this, '${week.id}', '${exId}')">${isSolved ? 'Solved ✓' : 'Mark as Solved'}</button>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML = html;
+  Prism.highlightAllUnder(el);
+
+  // Attach copy buttons to new code blocks
+  el.querySelectorAll('pre').forEach(pre => {
+    const code = pre.querySelector('code');
+    const lang = (code?.className || '').replace('language-', '') || 'code';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-wrapper';
+    const header = document.createElement('div');
+    header.className = 'code-header';
+    header.innerHTML = `<span class="code-lang">${lang}</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>`;
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(header);
+    wrapper.appendChild(pre);
+  });
+}
+
+function toggleExercise(header) {
+  const card = header.closest('.exercise-card');
+  card.classList.toggle('open');
+}
+
+function revealAnswer(btn) {
+  btn.style.display = 'none';
+  btn.nextElementSibling.classList.add('shown');
+}
+
+function markSolved(btn, weekId, exId) {
+  if (btn.classList.contains('done')) return;
+  btn.classList.add('done');
+  btn.textContent = 'Solved ✓';
+  const card = btn.closest('.exercise-card');
+  card.classList.add('solved');
+  const toggle = card.querySelector('.ex-toggle');
+  if (toggle) toggle.innerHTML = '<span style="color:var(--green);font-size:11px;font-weight:600">SOLVED</span><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  let solved = Storage.getSolved(weekId);
+  if (!solved.includes(exId)) { solved.push(exId); Storage.setSolved(weekId, solved); }
+}
+
+function splitExercises(section) {
+  const blocks = [];
+  // Try splitting by "**Exercise N:**" or "### Exercise" or numbered bold patterns
+  const lines = section.split('\n');
+  let current = null;
+  let inAnswer = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Detect exercise start patterns
+    const exStart = line.match(/^###\s+(Exercise\s+\d+|Q\d+[:.])(.*)/) ||
+                    line.match(/^\*\*Exercise\s+(\d+)[:.]\*\*(.*)/) ||
+                    line.match(/^\*\*Q(\d+)[:.]\*\*(.*)/) ||
+                    line.match(/^#{3,4}\s+(.+)/);
+
+    const answerStart = line.match(/^\*\*Answer[:.]\*\*|^###\s+Answer|^---\s*$/) && current;
+
+    if (exStart) {
+      if (current) blocks.push(current);
+      const title = (exStart[2] || exStart[1] || '').trim().replace(/\*\*/g, '');
+      current = { title: title || line.replace(/#+\s*/, '').trim(), question: '', answer: '' };
+      inAnswer = false;
+    } else if (answerStart && current) {
+      inAnswer = true;
+    } else if (current) {
+      if (inAnswer) { current.answer += line + '\n'; }
+      else { current.question += line + '\n'; }
+    }
+  }
+
+  if (current) blocks.push(current);
+
+  // Fallback: if only 1 block found with no answer detection, try splitting by **Answer**
+  if (blocks.length === 1 && !blocks[0].answer) {
+    const parts = section.split(/\*\*Answer[:.]\*\*/i);
+    if (parts.length > 1) {
+      blocks[0].question = parts[0];
+      blocks[0].answer = parts.slice(1).join('**Answer:**');
+    }
+  }
+
+  // If still nothing, return the whole thing as one exercise
+  if (blocks.length === 0 && section.trim()) {
+    blocks.push({ title: 'Practice Exercise', question: section, answer: '' });
+  }
+
+  return blocks.filter(b => b.question.trim() || b.answer.trim());
+}
+
+// ── FLASHCARDS RENDER ────────────────────────────────────────────────────────────────
+function renderFlashcards(week) {
+  const el = document.getElementById('flashcard-content');
+  el.style.display = 'block';
+  document.getElementById('lesson-content').style.display = 'none';
+  document.getElementById('exercises-content').style.display = 'none';
+
+  const md = week._rawMd;
+
+  // Find interview Q&A section
+  const qaMatch = md.match(/##\s+Interview Questions[\s\S]*?([\s\S]*?)(?=\n## [^#]|\n# [^#]|$)/i);
+
+  if (!qaMatch) {
+    el.innerHTML = `<div class="no-content-msg">No interview questions found in this week's content.<br><span style="color:var(--text3);font-size:13px">Add a "## Interview Questions" section to enable flashcards.</span></div>`;
+    return;
+  }
+
+  const qaSection = qaMatch[0];
+  const cards = parseQA(qaSection);
+
+  if (cards.length === 0) {
+    el.innerHTML = `<div class="no-content-msg">No Q&amp;A pairs found in the interview section.</div>`;
+    return;
+  }
+
+  state.fcCards = [...cards];
+  state.fcIndex = 0;
+  state.fcCorrect = 0;
+  state.fcWrong = 0;
+  state.fcDone = new Set();
+
+  renderFCView(el, week);
+}
+
+function parseQA(section) {
+  const cards = [];
+  // Match **Q1: ...** and **Answer:** or **A:** patterns
+  const qPattern = /\*\*Q(\d+)[:.]\s*([\s\S]*?)\*\*\s*\n([\s\S]*?)(?=\*\*Q\d+[:.]\s*|\n---\s*$|$)/gi;
+  let m;
+  while ((m = qPattern.exec(section)) !== null) {
+    const question = m[2].trim();
+    const body = m[3].trim();
+    // Split answer from explanation (everything after **Answer:**)
+    const ansMatch = body.match(/\*\*Answer[:.]\*\*\s*([\s\S]*)/i);
+    const answer = ansMatch ? ansMatch[1].trim() : body;
+    if (question) cards.push({ question, answer });
+  }
+
+  // Alternative: ### Q1 style
+  if (cards.length === 0) {
+    const blocks = section.split(/\n(?=\*\*Q\d+|\n###\s+Q\d+)/);
+    blocks.forEach(block => {
+      const qm = block.match(/\*\*Q\d+[:.]\*\*\s*(.*)/);
+      const am = block.match(/\*\*Answer[:.]\*\*([\s\S]*)/i);
+      if (qm && am) cards.push({ question: qm[1].trim(), answer: am[1].trim() });
+    });
+  }
+
+  return cards;
+}
+
+function renderFCView(el, week) {
+  const cards = state.fcCards;
+  const total = cards.length;
+  const done = state.fcDone.size;
+  const remaining = total - done;
+
+  if (done === total) {
+    el.innerHTML = `
+      <div class="fc-header">
+        <div class="fc-title">Interview Flashcards</div>
+      </div>
+      <div class="fc-all-done">
+        <h2>Session Complete! 🎉</h2>
+        <p>${state.fcCorrect} correct · ${state.fcWrong} to review</p>
+        <button class="fc-restart-btn" onclick="restartFlashcards()">Restart Session</button>
+      </div>`;
+    return;
+  }
+
+  const card = cards[state.fcIndex];
+
+  el.innerHTML = `
+    <div class="fc-header">
+      <div class="fc-title">Interview Flashcards</div>
+      <div class="fc-controls">
+        <span class="fc-counter">${done + 1} / ${total}</span>
+        <button class="fc-nav-btn" onclick="fcNav(-1)" ${state.fcIndex === 0 ? 'disabled' : ''}>←</button>
+        <button class="fc-nav-btn" onclick="fcNav(1)" ${state.fcIndex >= total - 1 ? 'disabled' : ''}>→</button>
+        <button class="fc-shuffle-btn" onclick="shuffleFC()">Shuffle</button>
+      </div>
+    </div>
+
+    <div class="flashcard" id="fc-card" onclick="flipCard()">
+      <div class="fc-badge q">Question</div>
+      <div class="fc-badge a" style="display:none">Answer</div>
+      <div class="fc-question">${escapeHtml(card.question)}</div>
+      <div class="fc-answer lesson-content">${marked.parse(card.answer)}</div>
+    </div>
+    <div class="fc-hint">Click the card to reveal the answer</div>
+
+    <div class="fc-score">
+      <button class="fc-score-btn wrong" onclick="scoreCard(false)">Need to review</button>
+      <button class="fc-score-btn right" onclick="scoreCard(true)">Got it right</button>
+    </div>
+
+    <div class="fc-stats">
+      <div class="fc-stat stat-correct">
+        <div class="fc-stat-num">${state.fcCorrect}</div>
+        <div class="fc-stat-label">Correct</div>
+      </div>
+      <div class="fc-stat stat-wrong">
+        <div class="fc-stat-num">${state.fcWrong}</div>
+        <div class="fc-stat-label">To review</div>
+      </div>
+      <div class="fc-stat stat-remaining">
+        <div class="fc-stat-num">${remaining}</div>
+        <div class="fc-stat-label">Remaining</div>
+      </div>
+    </div>`;
+
+  // Re-highlight code in answer
+  Prism.highlightAllUnder(el);
+}
+
+function flipCard() {
+  document.getElementById('fc-card')?.classList.toggle('flipped');
+}
+
+function fcNav(dir) {
+  const total = state.fcCards.length;
+  state.fcIndex = Math.max(0, Math.min(total - 1, state.fcIndex + dir));
+  renderFCView(document.getElementById('flashcard-content'), state.activeWeek);
+}
+
+function scoreCard(correct) {
+  state.fcDone.add(state.fcIndex);
+  if (correct) state.fcCorrect++; else state.fcWrong++;
+
+  // Find next unvisited card
+  const total = state.fcCards.length;
+  let next = state.fcIndex + 1;
+  while (next < total && state.fcDone.has(next)) next++;
+  if (next >= total) {
+    // Check if all done
+    if (state.fcDone.size >= total) {
+      renderFCView(document.getElementById('flashcard-content'), state.activeWeek);
+      return;
+    }
+    next = 0;
+    while (state.fcDone.has(next)) next++;
+  }
+  state.fcIndex = next;
+  renderFCView(document.getElementById('flashcard-content'), state.activeWeek);
+}
+
+function shuffleFC() {
+  for (let i = state.fcCards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [state.fcCards[i], state.fcCards[j]] = [state.fcCards[j], state.fcCards[i]];
+  }
+  state.fcIndex = 0;
+  state.fcDone.clear();
+  state.fcCorrect = 0;
+  state.fcWrong = 0;
+  renderFCView(document.getElementById('flashcard-content'), state.activeWeek);
+}
+
+function restartFlashcards() {
+  state.fcIndex = 0;
+  state.fcDone.clear();
+  state.fcCorrect = 0;
+  state.fcWrong = 0;
+  renderFCView(document.getElementById('flashcard-content'), state.activeWeek);
+}
+
+// ── MODE TABS ────────────────────────────────────────────────────────────────
+document.getElementById('mode-tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.mode-tab');
+  if (!tab || tab.classList.contains('disabled') || !state.activeWeek) return;
+
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  state.mode = tab.dataset.mode;
+
+  if (state.mode === 'lesson') renderLesson(state.activeWeek);
+  else if (state.mode === 'exercises') renderExercises(state.activeWeek);
+  else if (state.mode === 'flashcards') renderFlashcards(state.activeWeek);
+});
+
+// ── SEARCH ────────────────────────────────────────────────────────────────
+function buildSearchIndex(week, md) {
+  // Split into sections
+  const sections = md.split(/\n(?=##+ )/);
+  sections.forEach(section => {
+    const titleMatch = section.match(/^##+ (.+)/);
+    if (!titleMatch) return;
+    const title = titleMatch[1].replace(/[#*`]/g, '').trim();
+    const body = section.replace(/^##+ .+\n/, '').replace(/```[\s\S]*?```/g, '').replace(/[*_`#]/g, '').trim();
+    // Remove duplicate entries for this week+title
+    const existing = state.searchIndex.findIndex(e => e.weekId === week.id && e.title === title);
+    if (existing >= 0) state.searchIndex.splice(existing, 1);
+    state.searchIndex.push({ weekId: week.id, weekTitle: week.title, weekNum: week.num || '', title, body: body.slice(0, 500) });
+  });
+}
+
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', debounce(() => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (q.length < 2) { searchResults.style.display = 'none'; return; }
+
+  const results = state.searchIndex
+    .filter(entry => entry.title.toLowerCase().includes(q) || entry.body.toLowerCase().includes(q))
+    .slice(0, 10);
+
+  if (results.length === 0) { searchResults.style.display = 'none'; return; }
+
+  searchResults.innerHTML = results.map(r => {
+    const snippet = getSnippet(r.body, q);
+    return `<div class="search-result-item" onclick="jumpToResult('${r.weekId}', '${escapeAttr(r.title)}')">
+      <div class="sri-week">${r.weekTitle}</div>
+      <div class="sri-title">${highlight(r.title, q)}</div>
+      <div class="sri-snippet">${highlight(snippet, q)}</div>
+    </div>`;
+  }).join('');
+
+  searchResults.style.display = 'block';
+}, 200));
+
+searchInput.addEventListener('blur', () => setTimeout(() => searchResults.style.display = 'none', 200));
+searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') { searchResults.style.display = 'none'; searchInput.blur(); }});
+
+async function jumpToResult(weekId, title) {
+  searchResults.style.display = 'none';
+  searchInput.value = '';
+  await loadWeek(weekId);
+  // Small delay for render
+  setTimeout(() => {
+    const headings = document.querySelectorAll('#lesson-content h2, #lesson-content h3');
+    for (const h of headings) {
+      if (h.textContent.trim().toLowerCase().includes(title.toLowerCase())) {
+        h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+      }
+    }
+  }, 300);
+}
+
+function getSnippet(text, q) {
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx < 0) return text.slice(0, 80) + '…';
+  const start = Math.max(0, idx - 40);
+  const end = Math.min(text.length, idx + 80);
+  return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+}
+
+function highlight(text, q) {
+  return escapeHtml(text).replace(new RegExp(escapeRegex(escapeHtml(q)), 'gi'), m => `<mark>${m}</mark>`);
+}
+
+// ── UTILS ────────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escapeAttr(str) { return String(str).replace(/'/g, "\\'"); }
+function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function debounce(fn, ms) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; }
+
+// ── INIT ────────────────────────────────────────────────────────────────
+renderSidebar();
+updateOverallProgress();
+</script>
+</body>
+</html>
