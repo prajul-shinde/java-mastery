@@ -87,9 +87,10 @@ body.light {
 #theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
 /* LIGHT MODE CODE BLOCKS */
-body.light .code-wrapper pre { background: #f4f6fb !important; }
-body.light .code-header { background: #eaecf4; }
-body.light .lesson-content code:not([class]) { background: #e8ecf5; color: #c2410c; }
+body.light .code-wrapper pre { background: #1e2030 !important; }
+body.light .code-header { background: #161825; }
+body.light .code-lang { color: #fb923c !important; }
+body.light .lesson-content code:not([class]) { background: #f0f0f0; color: #c2410c; border: 1px solid rgba(0,0,0,0.08); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1002,7 +1003,7 @@ function renderExercises(week) {
   const md = week._rawMd;
 
   // Find exercises section
-  const exerciseMatch = md.match(/##\s+(?:Practice\s+)?Exercises?([\s\S]*?)(?=\n## |\n# |$)/i);
+  const exerciseMatch = md.match(/##\s+(?:Practice\s+)?Exercises?([\s\S]*?)(?=\n##\s+Interview|\n##\s+[A-Z]|\n# |$)/i);
 
   if (!exerciseMatch) {
     el.innerHTML = `<div class="no-content-msg">No exercises found in this week's content.</div>`;
@@ -1101,47 +1102,50 @@ function markSolved(btn, weekId, exId) {
 
 function splitExercises(section) {
   const blocks = [];
-  // Try splitting by "**Exercise N:**" or "### Exercise" or numbered bold patterns
   const lines = section.split('\n');
   let current = null;
   let inAnswer = false;
+  let codeDepth = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Detect exercise start patterns
-    const exStart = line.match(/^###\s+(Exercise\s+\d+|Q\d+[:.])(.*)/) ||
-                    line.match(/^\*\*Exercise\s+(\d+)[:.]\*\*(.*)/) ||
-                    line.match(/^\*\*Q(\d+)[:.]\*\*(.*)/) ||
-                    line.match(/^#{3,4}\s+(.+)/);
+    // Track code fences so we don't misparse lines inside code blocks
+    if (line.trim().startsWith('```')) {
+      codeDepth = codeDepth ? 0 : 1;
+    }
 
-    const answerStart = line.match(/^\*\*Answer[:.]\*\*|^###\s+Answer|^---\s*$/) && current;
+    // Only detect structure markers outside code blocks
+    if (!codeDepth) {
+      // Exercise start: ### Exercise N: Title
+      const exStart = line.match(/^###\s+(.+)/);
 
-    if (exStart) {
-      if (current) blocks.push(current);
-      const title = (exStart[2] || exStart[1] || '').trim().replace(/\*\*/g, '');
-      current = { title: title || line.replace(/#+\s*/, '').trim(), question: '', answer: '' };
-      inAnswer = false;
-    } else if (answerStart && current) {
-      inAnswer = true;
-    } else if (current) {
-      if (inAnswer) { current.answer += line + '\n'; }
-      else { current.question += line + '\n'; }
+      // Answer/Solution start: **Solution:** or **Answer:** (bold, at line start)
+      const answerStart = current && line.match(/^\*\*(Solution|Answer)[:.]?\*\*/i);
+
+      if (exStart) {
+        if (current) blocks.push(current);
+        current = { title: exStart[1].trim(), question: '', answer: '' };
+        inAnswer = false;
+        continue;
+      }
+
+      if (answerStart) {
+        inAnswer = true;
+        // Don't add the "**Solution:**" line itself to the answer
+        continue;
+      }
+    }
+
+    if (current) {
+      if (inAnswer) current.answer += line + '\n';
+      else current.question += line + '\n';
     }
   }
 
   if (current) blocks.push(current);
 
-  // Fallback: if only 1 block found with no answer detection, try splitting by **Answer**
-  if (blocks.length === 1 && !blocks[0].answer) {
-    const parts = section.split(/\*\*Answer[:.]\*\*/i);
-    if (parts.length > 1) {
-      blocks[0].question = parts[0];
-      blocks[0].answer = parts.slice(1).join('**Answer:**');
-    }
-  }
-
-  // If still nothing, return the whole thing as one exercise
+  // If nothing parsed (different format), return whole section as one block
   if (blocks.length === 0 && section.trim()) {
     blocks.push({ title: 'Practice Exercise', question: section, answer: '' });
   }
