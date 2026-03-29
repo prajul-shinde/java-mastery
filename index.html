@@ -984,24 +984,42 @@ function renderLesson(week) {
   // Prism highlight
   Prism.highlightAllUnder(el);
 
-  // Intercept internal anchor links — scroll to heading instead of navigating away
+  // Assign GitHub-style slug IDs to all headings so anchor links work
+  el.querySelectorAll('h1,h2,h3,h4').forEach(h => {
+    const slug = h.textContent.trim().toLowerCase()
+      .replace(/[`*]/g, '')
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    if (slug) h.id = slug;
+  });
+
+  // Intercept internal anchor links — smooth scroll to heading
   el.querySelectorAll('a[href^="#"]').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
-      const targetId = decodeURIComponent(link.getAttribute('href').slice(1));
-      // Try matching by id, then by text content (GitHub-style slugs)
-      let target = document.getElementById(targetId);
+      const raw = decodeURIComponent(link.getAttribute('href').slice(1));
+      // Try exact id match first
+      let target = document.getElementById(raw);
       if (!target) {
-        // Build slug from heading text the same way GitHub does
-        const allHeadings = el.querySelectorAll('h1,h2,h3,h4');
-        for (const h of allHeadings) {
+        // Normalise: same slug logic as above
+        const norm = raw.toLowerCase()
+          .replace(/[`*]/g, '').replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        target = document.getElementById(norm);
+      }
+      if (!target) {
+        // Last resort: search heading text
+        for (const h of el.querySelectorAll('h1,h2,h3,h4')) {
           const slug = h.textContent.trim().toLowerCase()
-            .replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
-          if (slug === targetId || h.id === targetId) { target = h; break; }
+            .replace(/[`*]/g, '').replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-').replace(/-+/g, '-');
+          if (slug.includes(raw.replace(/-/g,' ')) || slug === raw) { target = h; break; }
         }
       }
       if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('content-area').scrollTo({ top: target.offsetTop - 24, behavior: 'smooth' });
       }
     });
   });
@@ -1237,27 +1255,42 @@ function renderFlashcards(week) {
 function parseQA(section) {
   const cards = [];
 
-  // Split on every ### Qn or **Qn block boundary
-  const parts = section.split(/(?=^###\s+Q\d+|^\*\*Q\d+[:.\s])/m).filter(b => b.trim());
+  // Split the section into per-question blocks.
+  // Handles both:  **Q1: text**  (weeks 1,2,6,7)  and  ### Q1: text  (weeks 3,4,5,8)
+  const parts = section.split(/(?=^\*\*Q\d+[^*]|^###\s+Q\d+)/m).filter(b => b.trim());
 
   for (const block of parts) {
-    // Get question from ### Q1: text  OR  **Q1: text**
-    const hm = block.match(/^###\s+Q\d+[:.\s]+(.+)/m) ||
-               block.match(/^\*\*Q\d+[:.\s]+(.*?)\*\*\s*/m);
-    if (!hm) continue;
-    const question = hm[1].trim();
+    let question = '';
 
-    // Get answer — everything after **Answer:** label
-    const am = block.match(/\*\*Answer[:.]?\*\*\s*(.*)/i);
-    if (!am) continue;
+    // Try ### Q1: title  format
+    const h3Match = block.match(/^###\s+Q\d+[.:]\s*(.+)/m);
+    if (h3Match) {
+      question = h3Match[1].trim();
+    } else {
+      // Try **Q1: title** format
+      const boldMatch = block.match(/^\*\*Q\d+[.:]\s*(.*?)\*\*/m);
+      if (boldMatch) question = boldMatch[1].trim();
+    }
 
-    // Inline text on the Answer line + everything below it
-    const inlinePart = am[1].trim();
-    const afterIdx = block.indexOf(am[0]) + am[0].length;
-    const restPart = block.slice(afterIdx).trim();
-    const answer = (inlinePart ? inlinePart + '\n' : '') + restPart;
+    if (!question) continue;
 
-    if (question && answer.trim()) cards.push({ question, answer: answer.trim() });
+    // Find **Answer:** — capture everything after it
+    const ansIdx = block.search(/\*\*Answer[.:)]*\*\*/i);
+    if (ansIdx < 0) continue;
+
+    // Get any text on the same line as **Answer:**
+    const ansLineMatch = block.slice(ansIdx).match(/\*\*Answer[.:)]*\*\*\s*(.*)/i);
+    const sameLine = ansLineMatch ? ansLineMatch[1].trim() : '';
+
+    // Get everything after the **Answer:** line
+    const afterLine = block.slice(ansIdx).indexOf('\n');
+    const rest = afterLine >= 0 ? block.slice(ansIdx + afterLine + 1).trim() : '';
+
+    const answer = sameLine ? sameLine + (rest ? '\n' + rest : '') : rest;
+
+    if (question && answer.trim()) {
+      cards.push({ question, answer: answer.trim() });
+    }
   }
 
   return cards;
