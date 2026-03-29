@@ -538,6 +538,26 @@ h2.completed { text-decoration: line-through; color: var(--text3); }
 
 .ex-body-inner { border-top: 1px solid var(--border); padding-top: 16px; }
 
+.task-box {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.task-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--accent); margin-bottom: 8px;
+}
+
+.task-box .lesson-content p { margin-bottom: 8px; font-size: 14px; }
+.task-box .lesson-content ul { margin-bottom: 8px; }
+.task-box .lesson-content li { font-size: 14px; }
+.task-box .lesson-content p:last-child { margin-bottom: 0; }
+
 .reveal-btn {
   margin-top: 14px;
   padding: 8px 18px;
@@ -963,6 +983,28 @@ function renderLesson(week) {
 
   // Prism highlight
   Prism.highlightAllUnder(el);
+
+  // Intercept internal anchor links — scroll to heading instead of navigating away
+  el.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const targetId = decodeURIComponent(link.getAttribute('href').slice(1));
+      // Try matching by id, then by text content (GitHub-style slugs)
+      let target = document.getElementById(targetId);
+      if (!target) {
+        // Build slug from heading text the same way GitHub does
+        const allHeadings = el.querySelectorAll('h1,h2,h3,h4');
+        for (const h of allHeadings) {
+          const slug = h.textContent.trim().toLowerCase()
+            .replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          if (slug === targetId || h.id === targetId) { target = h; break; }
+        }
+      }
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
 }
 
 function toggleSection(checkEl, week) {
@@ -1045,11 +1087,14 @@ function renderExercises(week) {
       </div>
       <div class="ex-body">
         <div class="ex-body-inner">
-          <div class="lesson-content">${questionHtml}</div>
+          <div class="task-box">
+            <div class="task-label">&#x1F4CC; Task</div>
+            <div class="lesson-content">${questionHtml}</div>
+          </div>
           ${answerHtml ? `
-            <button class="reveal-btn" onclick="revealAnswer(this)">Show Answer</button>
+            <button class="reveal-btn" onclick="revealAnswer(this)">Show Solution</button>
             <div class="answer-section">
-              <div class="answer-label">Answer</div>
+              <div class="answer-label">Solution</div>
               <div class="lesson-content">${answerHtml}</div>
               <button class="mark-solved-btn${isSolved ? ' done' : ''}" onclick="markSolved(this, '${week.id}', '${exId}')">${isSolved ? 'Solved ✓' : 'Mark as Solved'}</button>
             </div>
@@ -1125,7 +1170,7 @@ function splitExercises(section) {
 
       if (exStart) {
         if (current) blocks.push(current);
-        current = { title: exStart[1].trim(), question: '', answer: '' };
+        current = { title: exStart[1].trim().replace(/^Exercise\s+\d+[:.:]\s*/i, ''), question: '', answer: '' };
         inAnswer = false;
         continue;
       }
@@ -1163,7 +1208,9 @@ function renderFlashcards(week) {
   const md = week._rawMd;
 
   // Find interview Q&A section
-  const qaMatch = md.match(/##\s+Interview Questions[\s\S]*?([\s\S]*?)(?=\n## [^#]|\n# [^#]|$)/i);
+  // Find interview section - handles # and ## headings
+  const interviewIdx = md.search(/^#{1,2}\s+.*Interview/im);
+  const qaMatch = interviewIdx >= 0 ? [null, md.slice(interviewIdx)] : null;
 
   if (!qaMatch) {
     el.innerHTML = `<div class="no-content-msg">No interview questions found in this week's content.<br><span style="color:var(--text3);font-size:13px">Add a "## Interview Questions" section to enable flashcards.</span></div>`;
@@ -1189,26 +1236,28 @@ function renderFlashcards(week) {
 
 function parseQA(section) {
   const cards = [];
-  // Match **Q1: ...** and **Answer:** or **A:** patterns
-  const qPattern = /\*\*Q(\d+)[:.]\s*([\s\S]*?)\*\*\s*\n([\s\S]*?)(?=\*\*Q\d+[:.]\s*|\n---\s*$|$)/gi;
-  let m;
-  while ((m = qPattern.exec(section)) !== null) {
-    const question = m[2].trim();
-    const body = m[3].trim();
-    // Split answer from explanation (everything after **Answer:**)
-    const ansMatch = body.match(/\*\*Answer[:.]\*\*\s*([\s\S]*)/i);
-    const answer = ansMatch ? ansMatch[1].trim() : body;
-    if (question) cards.push({ question, answer });
-  }
 
-  // Alternative: ### Q1 style
-  if (cards.length === 0) {
-    const blocks = section.split(/\n(?=\*\*Q\d+|\n###\s+Q\d+)/);
-    blocks.forEach(block => {
-      const qm = block.match(/\*\*Q\d+[:.]\*\*\s*(.*)/);
-      const am = block.match(/\*\*Answer[:.]\*\*([\s\S]*)/i);
-      if (qm && am) cards.push({ question: qm[1].trim(), answer: am[1].trim() });
-    });
+  // Split on every ### Qn or **Qn block boundary
+  const parts = section.split(/(?=^###\s+Q\d+|^\*\*Q\d+[:.\s])/m).filter(b => b.trim());
+
+  for (const block of parts) {
+    // Get question from ### Q1: text  OR  **Q1: text**
+    const hm = block.match(/^###\s+Q\d+[:.\s]+(.+)/m) ||
+               block.match(/^\*\*Q\d+[:.\s]+(.*?)\*\*\s*/m);
+    if (!hm) continue;
+    const question = hm[1].trim();
+
+    // Get answer — everything after **Answer:** label
+    const am = block.match(/\*\*Answer[:.]?\*\*\s*(.*)/i);
+    if (!am) continue;
+
+    // Inline text on the Answer line + everything below it
+    const inlinePart = am[1].trim();
+    const afterIdx = block.indexOf(am[0]) + am[0].length;
+    const restPart = block.slice(afterIdx).trim();
+    const answer = (inlinePart ? inlinePart + '\n' : '') + restPart;
+
+    if (question && answer.trim()) cards.push({ question, answer: answer.trim() });
   }
 
   return cards;
