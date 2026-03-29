@@ -44,6 +44,53 @@
   --radius-lg: 12px;
 }
 
+/* LIGHT MODE */
+body.light {
+  --bg: #f8f9fc;
+  --bg2: #ffffff;
+  --bg3: #f1f3f8;
+  --bg4: #e4e8f0;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #111827;
+  --text2: #4b5563;
+  --text3: #9ca3af;
+  --accent: #ea6c0a;
+  --accent2: #f97316;
+  --accent-dim: rgba(234,108,10,0.1);
+  --accent-dim2: rgba(234,108,10,0.18);
+  --blue: #2563eb;
+  --blue-dim: rgba(37,99,235,0.08);
+  --green: #059669;
+  --green-dim: rgba(5,150,105,0.08);
+  --purple: #7c3aed;
+  --purple-dim: rgba(124,58,237,0.08);
+  --yellow: #d97706;
+  --yellow-dim: rgba(217,119,6,0.08);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.08);
+}
+
+/* THEME TOGGLE BUTTON */
+#theme-toggle {
+  width: 32px; height: 32px;
+  border-radius: var(--radius);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+#theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* LIGHT MODE CODE BLOCKS */
+body.light .code-wrapper pre { background: #f4f6fb !important; }
+body.light .code-header { background: #eaecf4; }
+body.light .lesson-content code:not([class]) { background: #e8ecf5; color: #c2410c; }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body { height: 100%; overflow: hidden; }
@@ -735,6 +782,7 @@ h2.completed { text-decoration: line-through; color: var(--text3); }
         <div class="mode-tab" data-mode="exercises">Exercises</div>
         <div class="mode-tab purple-tab" data-mode="flashcards">Flashcards</div>
       </div>
+      <button id="theme-toggle" title="Toggle light/dark mode" onclick="toggleTheme()">&#9790;</button>
     </div>
 
     <div id="content-area">
@@ -1374,6 +1422,23 @@ function debounce(fn, ms) { let t; return (...args) => { clearTimeout(t); t = se
 // ── INIT ────────────────────────────────────────────────────────────────
 renderSidebar();
 updateOverallProgress();
+
+// ── THEME TOGGLE ────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-toggle').innerHTML = isLight ? '&#9788;' : '&#9790;';
+  localStorage.setItem('jm_theme', isLight ? 'light' : 'dark');
+}
+
+// Restore saved theme
+(function() {
+  const saved = localStorage.getItem('jm_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.innerHTML = '&#9788;';
+  }
+})();
 </script>
 </body>
 </html>
